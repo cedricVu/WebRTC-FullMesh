@@ -11,15 +11,12 @@
 
 <body>
 
-<h1>Realtime communication with WebRTC</h1>
-<video id="localVideo" autoplay playsinline></video>
-<video id="remoteVideo" autoplay playsinline></video>
-
-
-<div>
-    <button id="callButton">Call</button>
-    <button id="stopButton">Stop</button>
+<div class="videos">
+    <video id="localVideo" autoplay muted playsinline ></video>
 </div>
+
+<br />
+<div id="connections"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.0/socket.io.js"></script>
 <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
