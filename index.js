@@ -14,11 +14,13 @@ server.get('/', function(req, res){
 });
 
 io.on('connection', function (socket) {
-    io.sockets.emit('user-joined', { clients:  Object.keys(io.sockets.clients().sockets), count: io.engine.clientsCount, joinedUserId: socket.id});
     socket.on('signaling', function(data) {
         io.to(data.toId).emit('signaling', { fromId: socket.id, ...data });
     });
+    socket.on('new-subscribe', function(data) {
+        io.to(data.toId).emit('new-subscribe', { fromId: socket.id, ...data });
+    });
     socket.on('disconnect', function() {
         io.sockets.emit('user-left', socket.id)
-    })
+    });
 });
