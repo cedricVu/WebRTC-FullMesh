@@ -36,20 +36,23 @@ function connectSocketToSignaling() {
     const socket = io.connect('http://localhost:3000', { secure: true });
     socket.on('connect', () => {
         localUserId = socket.id;
+        console.log('localUser', localUserId);
         socket.on('user-joined', (data) => {
             const clients = data.clients;
             const joinedUserId = data.joinedUserId;
+            console.log(joinedUserId, ' joined');
             if (Array.isArray(clients) && clients.length > 0) {
                 clients.forEach((userId) => {
                     if (!connections[userId]) {
                         connections[userId] = new RTCPeerConnection(mediaStreamConstraints);
                         connections[userId].onicecandidate = () => {
                             if (event.candidate) {
+                                console.log(socket.id, ' Send candidate to ', userId);
                                 socket.emit('signaling', { type: 'candidate', candidate: event.candidate, toId: userId });
                             }
                         };
                         connections[userId].onaddstream = () => {
-                            gotRemoteStream(event, userId)
+                            gotRemoteStream(event, userId);
                         };
                         connections[userId].addStream(localStream);
                     }
@@ -58,6 +61,7 @@ function connectSocketToSignaling() {
                 if (data.count >= 2) {
                     connections[joinedUserId].createOffer(offerOptions).then((description) => {
                         connections[joinedUserId].setLocalDescription(description).then(() => {
+                            console.log(socket.id, ' Send offer to ', joinedUserId);
                             socket.emit('signaling', {
                                 toId: joinedUserId,
                                 description: connections[joinedUserId].localDescription,
@@ -81,10 +85,11 @@ function connectSocketToSignaling() {
 }
 
 function gotMessageFromSignaling(socket, data) {
-    if (data.fromId !== localUserId) {
+    const fromId = data.fromId;
+    if (fromId !== localUserId) {
         switch (data.type) {
             case 'candidate':
-                const fromId = data.fromId;
+                console.log(socket.id, ' Receive Candidate from ', fromId);
                 if (data.candidate) {
                     gotIceCandidate(fromId, data.candidate);
                 }
@@ -92,16 +97,18 @@ function gotMessageFromSignaling(socket, data) {
 
             case 'sdp':
                 if (data.description) {
-                    connections[data.fromId].setRemoteDescription(new RTCSessionDescription(data.description))
+                    console.log(socket.id, ' Receive sdp from ', fromId);
+                    connections[fromId].setRemoteDescription(new RTCSessionDescription(data.description))
                         .then(() => {
                             if (data.description.type === 'offer') {
-                                connections[data.fromId].createAnswer()
+                                connections[fromId].createAnswer()
                                     .then((description) => {
-                                        connections[data.fromId].setLocalDescription(description).then(() => {
+                                        connections[fromId].setLocalDescription(description).then(() => {
+                                            console.log(socket.id, ' Send answer to ', fromId);
                                             socket.emit('signaling', {
                                                 type: 'sdp',
-                                                toId: data.fromId,
-                                                description: connections[data.fromId].localDescription
+                                                toId: fromId,
+                                                description: connections[fromId].localDescription
                                             });
                                         });
                                     })
