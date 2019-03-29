@@ -1,5 +1,5 @@
 # WebRTC-FullMesh
-This is a basic demo video call was written base on WebRTC using FullMesh sollution.
+This is a basic demo video call was written base on WebRTC using FullMesh sollution(Multi peer).
 # Installation
 1. git clone
 2. npm install
